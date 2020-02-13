@@ -4,17 +4,26 @@ from socket import *
 import sys
 import select
 import threading
+import signal
+
+
+def signal_handler(sig, frame):
+    print('stop thread')
+    x.stop()
+    sys.exit(0)
+
+
 
 basepath = 'folder/'
 
-def send(frm, to):
+def send(frm, to, tck):
     s = socket(AF_INET,SOCK_DGRAM)
-    host =sys.argv[1]
+    host ="127.0.0.1."
     port = 9999
     buf =1024
     addr = (host,port)
 
-    file_name=sys.argv[2]
+    file_name=basepath+frm+"_"+to+"_"+tck
 
     s.sendto(file_name,addr)
 
@@ -54,13 +63,25 @@ def listen():
 
 
 
-x = threading.Thread(target=listen)
-x.start()
+snd = False
+print(len(sys.argv))
+if len(sys.argv) > 1 and sys.argv[1]=="send":
+    snd = True
+else:
+    x = threading.Thread(target=listen)
+    #x.start()
+
+signal.signal(signal.SIGINT, signal_handler)
+
+
 while(True):
     for entry in os.listdir(basepath):
         if os.path.isfile(os.path.join(basepath, entry)):
             frm, to, tick = entry.split("_")
             print("From: "+frm+" To: "+to)
+            if snd==True:
+                send(frm, to, tick)
+            
 
 
     time.sleep(5)        
